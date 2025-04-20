@@ -1,46 +1,64 @@
-import { config } from "dotenv";
-import * as fs from 'fs';
+import * as dotenv from 'dotenv';
+import fs from 'fs';
 
-// โหลด .env file
-config();
+// โหลดไฟล์ .env.local ก่อน
+dotenv.config({ path: '.env.local' });
 
-// เรียกใช้ในโค้ดเพื่อดู DATABASE_URL ที่ได้มา
-const databaseUrl = process.env.DATABASE_URL;
+// ฟังก์ชันตรวจสอบ DATABASE_URL
+function checkDatabaseUrl() {
+  const databaseUrl = process.env.DATABASE_URL;
 
-// ตรวจสอบว่ามีค่าหรือไม่
-if (!databaseUrl) {
-  console.error("DATABASE_URL ไม่ได้ถูกกำหนดในตัวแปรสภาพแวดล้อม");
-} else {
-  // ปิดบังข้อมูลสำคัญ
-  const hiddenUrl = databaseUrl.replace(/(postgres|postgresql):\/\/([^:]+):[^@]+@/, "$1://$2:****@");
-  console.log("DATABASE_URL (แบบปิดบังรหัสผ่าน):", hiddenUrl);
+  console.log('===== Database Connection Debug =====');
   
-  // ตรวจสอบรูปแบบ URL ว่าถูกต้องหรือไม่
+  if (!databaseUrl) {
+    console.error("DATABASE_URL ไม่ได้ถูกกำหนดในตัวแปรสภาพแวดล้อม");
+    return;
+  }
+  
+  console.log("DATABASE_URL มีค่าอยู่:", databaseUrl.slice(0, 12) + '...');
+  
+  // ตรวจสอบว่า URL เป็นรูปแบบที่ถูกต้องหรือไม่
   try {
     const url = new URL(databaseUrl);
+    console.log("URL มีรูปแบบถูกต้อง");
     console.log("Protocol:", url.protocol);
     console.log("Host:", url.host);
-    console.log("Username:", url.username);
-    console.log("Has Password:", url.password.length > 0 ? "Yes" : "No");
-    console.log("Pathname (database name):", url.pathname);
-  } catch (e: unknown) {
+    console.log("Path:", url.pathname);
+  } catch (e) {
     if (e instanceof Error) {
       console.error("URL ไม่ถูกต้อง:", e.message);
     } else {
       console.error("URL ไม่ถูกต้อง:", String(e));
     }
   }
+  
+  // ตรวจสอบไฟล์ .env.local
+  try {
+    const envContent = fs.readFileSync('.env.local', 'utf8');
+    console.log("\n.env.local file content:");
+    
+    // แสดงเฉพาะบรรทัดที่มี DATABASE_URL แต่ปิดบังส่วนที่เป็นข้อมูลสำคัญ
+    const lines = envContent.split('\n');
+    for (const line of lines) {
+      if (line.trim().startsWith('DATABASE_URL')) {
+        const parts = line.split('=');
+        if (parts.length >= 2) {
+          console.log(`${parts[0]}=${parts[1].slice(0, 12)}...`);
+        } else {
+          console.log(line);
+        }
+      } else if (line.trim()) {
+        console.log(`${line.split('=')[0]}=***`);
+      }
+    }
+  } catch (e) {
+    if (e instanceof Error) {
+      console.error("ไม่สามารถอ่านไฟล์ .env:", e.message);
+    } else {
+      console.error("ไม่สามารถอ่านไฟล์ .env:", String(e));
+    }
+  }
 }
 
-// ตรวจสอบการเข้าถึงไฟล์ .env
-try {
-  const envContent = fs.readFileSync('.env', 'utf8');
-  const envLines = envContent.split('\n').length;
-  console.log(".env file มี", envLines, "บรรทัด");
-} catch (e: unknown) {
-  if (e instanceof Error) {
-    console.error("ไม่สามารถอ่านไฟล์ .env:", e.message);
-  } else {
-    console.error("ไม่สามารถอ่านไฟล์ .env:", String(e));
-  }
-} 
+// รันฟังก์ชันตรวจสอบ
+checkDatabaseUrl(); 

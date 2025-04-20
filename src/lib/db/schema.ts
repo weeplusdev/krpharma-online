@@ -2,6 +2,7 @@ import {
   pgTable,
   serial,
   text,
+  decimal,
   varchar,
   timestamp,
   uniqueIndex,
@@ -111,6 +112,42 @@ export const rolePermissions = pgTable('role_permissions', {
   };
 });
 
+
+// สินค้า
+export const products = pgTable('products', {
+  id: serial('id').primaryKey(),
+  name: varchar('name', { length: 255 }).notNull(),
+  sanityId: varchar('sanity_id', { length: 50 }).notNull().unique(),
+  slug: varchar('slug', { length: 255 }).notNull().unique(),
+  price: decimal('price', { precision: 10, scale: 2 }).notNull(),
+  stock: integer('stock').notNull().default(0),
+  createdAt: timestamp('created_at').default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: timestamp('updated_at').default(sql`CURRENT_TIMESTAMP`)
+});
+
+// สถานะออเดอร์
+export const orderStatusEnum = pgEnum('order_status', [
+  'pending', 'processing', 'completed', 'cancelled'
+]);
+
+// ออเดอร์
+export const orders = pgTable('orders', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id').notNull(),
+  status: orderStatusEnum('status').notNull(),
+  createdAt: timestamp('created_at').default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: timestamp('updated_at').default(sql`CURRENT_TIMESTAMP`)
+});
+
+// รายการสินค้าในออเดอร์
+export const orderItems = pgTable('order_items', {
+  id: serial('id').primaryKey(),
+  orderId: integer('order_id').notNull(),
+  productId: integer('product_id').notNull(),
+  quantity: integer('quantity').notNull(),
+  pricePerUnit: decimal('price_per_unit', { precision: 10, scale: 2 }).notNull()
+});
+
 // ประเภทข้อมูลที่จะใช้ในแอปพลิเคชัน
 export type User = InferSelectModel<typeof users>;
 export type NewUser = InferInsertModel<typeof users>;
@@ -124,3 +161,11 @@ export type Permission = InferSelectModel<typeof permissions>;
 export type NewPermission = InferInsertModel<typeof permissions>;
 export type RolePermission = InferSelectModel<typeof rolePermissions>;
 export type NewRolePermission = InferInsertModel<typeof rolePermissions>;
+
+// Types สำหรับใช้งาน
+export type Product = InferSelectModel<typeof products>;
+export type NewProduct = InferInsertModel<typeof products>;
+export type Order = InferSelectModel<typeof orders>;
+export type NewOrder = InferInsertModel<typeof orders>;
+export type OrderItem = InferSelectModel<typeof orderItems>;
+export type NewOrderItem = InferInsertModel<typeof orderItems>;
