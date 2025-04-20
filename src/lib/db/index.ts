@@ -6,7 +6,7 @@ import { config } from "dotenv";
 config();
 
 // ตั้งค่า Neon สำหรับ Edge functions
-neonConfig.fetchConnectionCache = true;
+//neonConfig.fetchConnectionCache = true;
 
 // เพิ่มการตรวจสอบค่า DATABASE_URL เพื่อดีบัก
 const databaseUrl = process.env.DATABASE_URL;
