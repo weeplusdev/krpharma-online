@@ -1,37 +1,66 @@
-import bcrypt from 'bcryptjs';
-
 /**
- * สร้าง random bytes โดยใช้ Web Crypto API แทน crypto.randomBytes
- */
-function generateRandomHexString(byteLength: number): string {
-  const array = new Uint8Array(byteLength);
-  globalThis.crypto.getRandomValues(array);
-  return Array.from(array)
-    .map((b) => b.toString(16).padStart(2, '0'))
-    .join('');
-}
-
-/**
- * สร้างรหัสผ่านที่ปลอดภัยแบบสุ่ม
+ * สร้างรหัสผ่านที่ปลอดภัยแบบสุ่ม (เรียกผ่าน API)
  */
 export async function generateSecurePassword(): Promise<string> {
-  const randomPassword = generateRandomHexString(16); // 16 bytes = 32 hex characters
-  return await bcrypt.hash(randomPassword, 10);
+  const response = await fetch('/api/auth/password', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ action: 'generate' }),
+  });
+  
+  if (!response.ok) {
+    throw new Error('ไม่สามารถสร้างรหัสผ่านได้');
+  }
+  
+  const data = await response.json();
+  return data.hashedPassword;
 }
 
 /**
- * เข้ารหัสรหัสผ่าน
+ * เข้ารหัสรหัสผ่าน (เรียกผ่าน API)
  */
 export async function hashPassword(password: string): Promise<string> {
-  return await bcrypt.hash(password, 10);
+  const response = await fetch('/api/auth/password', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ action: 'hash', password }),
+  });
+  
+  if (!response.ok) {
+    throw new Error('ไม่สามารถเข้ารหัสรหัสผ่านได้');
+  }
+  
+  const data = await response.json();
+  return data.hashedPassword;
 }
 
 /**
- * ตรวจสอบรหัสผ่าน
+ * ตรวจสอบรหัสผ่าน (เรียกผ่าน API)
  */
 export async function verifyPassword(
   hashedPassword: string,
   plainPassword: string
 ): Promise<boolean> {
-  return await bcrypt.compare(plainPassword, hashedPassword);
+  const response = await fetch('/api/auth/password', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      action: 'verify',
+      password: plainPassword,
+      hashedPassword,
+    }),
+  });
+  
+  if (!response.ok) {
+    throw new Error('ไม่สามารถตรวจสอบรหัสผ่านได้');
+  }
+  
+  const data = await response.json();
+  return data.isValid;
 }
