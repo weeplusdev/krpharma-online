@@ -3,5 +3,5 @@ import { handlers } from "@/auth"
 // จัดการ request ของ NextAuth
 export const { GET, POST } = handlers
 
-// รันบน Edge runtime เพื่อประสิทธิภาพที่ดีขึ้น
-export const runtime = "edge" 
+// รันบน Node.js runtime เพื่อให้ใช้งานได้กับ dotenv และโมดูลอื่นๆ ของ Node.js
+export const runtime = "nodejs" 
