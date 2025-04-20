@@ -1,37 +1,25 @@
 import { NextResponse } from 'next/server';
-import bcrypt from 'bcryptjs';
+import { hash } from 'bcryptjs';
+import crypto from 'crypto';
 
 export const runtime = 'nodejs';
 
 /**
- * สร้าง random bytes โดยใช้ Web Crypto API
- */
-function generateRandomHexString(byteLength: number): string {
-  const array = new Uint8Array(byteLength);
-  // ใช้ globalThis.crypto.getRandomValues() จาก Web Crypto API
-  // ซึ่งสามารถใช้ได้ทั้งใน Node.js และ browser
-  globalThis.crypto.getRandomValues(array);
-  return Array.from(array)
-    .map((b) => b.toString(16).padStart(2, '0'))
-    .join('');
-}
-
-/**
- * API สำหรับสร้างรหัสผ่านสุ่มและ hash
+ * API สำหรับสร้างรหัสผ่านที่ปลอดภัยแบบสุ่ม
  */
 export async function POST() {
   try {
-    const randomPassword = generateRandomHexString(16);
-    const hashedPassword = await bcrypt.hash(randomPassword, 10);
+    // สร้างรหัสผ่านสุ่มที่ปลอดภัย
+    const randomPassword = crypto.randomBytes(12).toString('hex');
     
-    return NextResponse.json({ 
-      plainPassword: randomPassword,
-      hashedPassword 
-    });
+    // เข้ารหัสรหัสผ่าน
+    const hashedPassword = await hash(randomPassword, 10);
+
+    return NextResponse.json({ hashedPassword });
   } catch (error) {
-    console.error('Password generate API error:', error);
+    console.error('Generate password error:', error);
     return NextResponse.json(
-      { error: 'เกิดข้อผิดพลาดในการสร้างรหัสผ่าน' },
+      { message: 'เกิดข้อผิดพลาดในการสร้างรหัสผ่าน' },
       { status: 500 }
     );
   }

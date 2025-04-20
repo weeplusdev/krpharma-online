@@ -1,6 +1,6 @@
 import { db } from '@/lib/db';
 import { users, accounts, UserRole } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import { generateSecurePassword } from '@/lib/auth/password';
 
 interface LineProfile {
@@ -24,11 +24,21 @@ export async function handleLineCallback(profile: LineProfile, tokens: LineToken
 
     // ถ้ามีผู้ใช้อยู่แล้ว
     if (existingUser) {
-      // อัปเดต tokens
-      if (tokens.access_token || tokens.refresh_token) {
-        const existingAccount = await db.query.accounts.findFirst({
-          where: eq(accounts.providerAccountId, profile.sub)
-        });
+      // อัปเดต tokens สำหรับบัญชี Line
+      try {
+        // ใช้ select แทน query เพื่อป้องกันปัญหากับความสัมพันธ์
+        const existingAccountResult = await db
+          .select()
+          .from(accounts)
+          .where(
+            and(
+              eq(accounts.provider, 'line'),
+              eq(accounts.providerAccountId, profile.sub)
+            )
+          )
+          .limit(1);
+        
+        const existingAccount = existingAccountResult[0];
 
         if (existingAccount) {
           await db.update(accounts)
@@ -36,7 +46,12 @@ export async function handleLineCallback(profile: LineProfile, tokens: LineToken
               access_token: tokens.access_token || existingAccount.access_token,
               refresh_token: tokens.refresh_token || existingAccount.refresh_token,
             })
-            .where(eq(accounts.providerAccountId, profile.sub));
+            .where(
+              and(
+                eq(accounts.provider, 'line'),
+                eq(accounts.providerAccountId, profile.sub)
+              )
+            );
         } else {
           // สร้าง account ใหม่ถ้ายังไม่มี
           await db.insert(accounts).values({
@@ -48,6 +63,9 @@ export async function handleLineCallback(profile: LineProfile, tokens: LineToken
             refresh_token: tokens.refresh_token,
           });
         }
+      } catch (error) {
+        console.error("Error updating Line account:", error);
+        // ดำเนินการต่อแม้จะมีข้อผิดพลาดในการอัปเดต token
       }
       
       return existingUser;
@@ -67,14 +85,19 @@ export async function handleLineCallback(profile: LineProfile, tokens: LineToken
 
     // สร้าง account สำหรับ Line
     if (newUser[0]) {
-      await db.insert(accounts).values({
-        userId: newUser[0].id,
-        type: 'oauth',
-        provider: 'line',
-        providerAccountId: profile.sub,
-        access_token: tokens.access_token,
-        refresh_token: tokens.refresh_token,
-      });
+      try {
+        await db.insert(accounts).values({
+          userId: newUser[0].id,
+          type: 'oauth',
+          provider: 'line',
+          providerAccountId: profile.sub,
+          access_token: tokens.access_token,
+          refresh_token: tokens.refresh_token,
+        });
+      } catch (error) {
+        console.error("Error creating Line account:", error);
+        // ดำเนินการต่อแม้จะมีข้อผิดพลาดในการสร้าง account
+      }
     }
 
     return newUser[0];

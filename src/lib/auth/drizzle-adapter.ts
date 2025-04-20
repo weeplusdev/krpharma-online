@@ -77,29 +77,40 @@ export function DrizzleAdapter(): Adapter {
     },
     
     async getUserByAccount({ providerAccountId, provider }) {
-      const result = await db.query.accounts.findFirst({
-        where: and(
-          eq(accounts.providerAccountId, providerAccountId),
-          eq(accounts.provider, provider)
-        ),
-        with: {
-          user: true,
-        },
-      });
-      
-      if (!result || !result.user) return null;
-      
-      const user = result.user as User;
-      
-      const adaptedUser: AdapterUser = {
-        id: String(user.id),
-        name: user.name,
-        email: user.email,
-        emailVerified: user.emailVerified,
-        image: user.image
-      };
-      
-      return adaptedUser;
+      try {
+        // ใช้การ join แทนการใช้ with เพื่อหลีกเลี่ยงปัญหากับ referencedTable
+        const records = await db
+          .select({
+            user: users,
+            account: accounts
+          })
+          .from(accounts)
+          .innerJoin(users, eq(accounts.userId, users.id))
+          .where(
+            and(
+              eq(accounts.providerAccountId, providerAccountId),
+              eq(accounts.provider, provider)
+            )
+          )
+          .limit(1);
+        
+        if (!records.length || !records[0].user) return null;
+        
+        const user = records[0].user;
+        
+        const adaptedUser: AdapterUser = {
+          id: String(user.id),
+          name: user.name,
+          email: user.email,
+          emailVerified: user.emailVerified,
+          image: user.image
+        };
+        
+        return adaptedUser;
+      } catch (error) {
+        console.error("Error in getUserByAccount:", error);
+        return null;
+      }
     },
     
     async updateUser({ id, ...data }) {
@@ -251,35 +262,45 @@ export function DrizzleAdapter(): Adapter {
     },
     
     async getSessionAndUser(sessionToken) {
-      const result = await db.query.sessions.findFirst({
-        where: eq(sessions.sessionToken, sessionToken),
-        with: {
-          user: true,
-        },
-      });
-      
-      if (!result || !result.user) return null;
-      
-      const user = result.user as User;
-      
-      const adaptedSession: AdapterSession = {
-        userId: String(result.userId),
-        sessionToken: result.sessionToken,
-        expires: result.expiresAt
-      };
-      
-      const adaptedUser: AdapterUser = {
-        id: String(user.id),
-        name: user.name,
-        email: user.email,
-        emailVerified: user.emailVerified,
-        image: user.image
-      };
-      
-      return {
-        session: adaptedSession,
-        user: adaptedUser,
-      };
+      try {
+        // ใช้การ join แทนการใช้ with เพื่อหลีกเลี่ยงปัญหากับ referencedTable
+        const records = await db
+          .select({
+            session: sessions,
+            user: users
+          })
+          .from(sessions)
+          .innerJoin(users, eq(sessions.userId, users.id))
+          .where(eq(sessions.sessionToken, sessionToken))
+          .limit(1);
+        
+        if (!records.length || !records[0].user || !records[0].session) return null;
+        
+        const session = records[0].session;
+        const user = records[0].user;
+        
+        const adaptedSession: AdapterSession = {
+          userId: String(session.userId),
+          sessionToken: session.sessionToken,
+          expires: session.expiresAt
+        };
+        
+        const adaptedUser: AdapterUser = {
+          id: String(user.id),
+          name: user.name,
+          email: user.email,
+          emailVerified: user.emailVerified,
+          image: user.image
+        };
+        
+        return {
+          session: adaptedSession,
+          user: adaptedUser,
+        };
+      } catch (error) {
+        console.error("Error in getSessionAndUser:", error);
+        return null;
+      }
     },
     
     async updateSession(data) {

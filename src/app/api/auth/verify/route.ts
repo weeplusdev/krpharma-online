@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import bcrypt from 'bcryptjs';
+import { compare } from 'bcryptjs';
 
 export const runtime = 'nodejs';
 
@@ -10,26 +10,19 @@ export async function POST(req: NextRequest) {
   try {
     const { password, hashedPassword } = await req.json();
     
-    if (!password) {
+    if (!password || !hashedPassword) {
       return NextResponse.json(
-        { error: 'ต้องระบุรหัสผ่าน' },
+        { message: 'ข้อมูลไม่ครบถ้วน' },
         { status: 400 }
       );
     }
     
-    if (!hashedPassword) {
-      return NextResponse.json(
-        { error: 'ต้องระบุรหัสผ่านที่เข้ารหัสแล้ว' },
-        { status: 400 }
-      );
-    }
-    
-    const isValid = await bcrypt.compare(password, hashedPassword);
+    const isValid = await compare(password, hashedPassword);
     return NextResponse.json({ isValid });
   } catch (error) {
-    console.error('Password verify API error:', error);
+    console.error('Verify password error:', error);
     return NextResponse.json(
-      { error: 'เกิดข้อผิดพลาดในการตรวจสอบรหัสผ่าน' },
+      { message: 'เกิดข้อผิดพลาดในการตรวจสอบรหัสผ่าน' },
       { status: 500 }
     );
   }

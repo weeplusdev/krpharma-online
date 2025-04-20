@@ -1,3 +1,5 @@
+import { compare, hash } from 'bcryptjs';
+
 /**
  * สร้างรหัสผ่านที่ปลอดภัยแบบสุ่ม (เรียกผ่าน API)
  */
@@ -23,24 +25,11 @@ export async function generateSecurePassword(): Promise<string> {
 }
 
 /**
- * เข้ารหัสรหัสผ่าน (เรียกผ่าน API)
+ * เข้ารหัสรหัสผ่าน
  */
 export async function hashPassword(password: string): Promise<string> {
   try {
-    const response = await fetch('/api/auth/hash', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ password }),
-    });
-    
-    if (!response.ok) {
-      throw new Error(`Error: ${response.status} ${response.statusText}`);
-    }
-    
-    const data = await response.json();
-    return data.hashedPassword;
+    return await hashPasswordDirect(password);
   } catch (error) {
     console.error('Failed to hash password:', error);
     throw new Error('ไม่สามารถเข้ารหัสรหัสผ่านได้');
@@ -48,32 +37,28 @@ export async function hashPassword(password: string): Promise<string> {
 }
 
 /**
- * ตรวจสอบรหัสผ่าน (เรียกผ่าน API)
+ * เข้ารหัสรหัสผ่านโดยใช้ bcryptjs โดยตรง
+ */
+export async function hashPasswordDirect(password: string, saltRounds: number = 10): Promise<string> {
+  try {
+    return await hash(password, saltRounds);
+  } catch (error) {
+    console.error('Failed to hash password directly:', error);
+    throw new Error('ไม่สามารถเข้ารหัสรหัสผ่านได้');
+  }
+}
+
+/**
+ * ตรวจสอบรหัสผ่านโดยใช้ bcryptjs โดยตรง
  */
 export async function verifyPassword(
   hashedPassword: string,
   plainPassword: string
 ): Promise<boolean> {
   try {
-    const response = await fetch('/api/auth/verify', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        password: plainPassword,
-        hashedPassword,
-      }),
-    });
-    
-    if (!response.ok) {
-      throw new Error(`Error: ${response.status} ${response.statusText}`);
-    }
-    
-    const data = await response.json();
-    return data.isValid;
+    return await compare(plainPassword, hashedPassword);
   } catch (error) {
     console.error('Failed to verify password:', error);
-    throw new Error('ไม่สามารถตรวจสอบรหัสผ่านได้');
+    return false;
   }
 }

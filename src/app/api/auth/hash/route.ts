@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import bcrypt from 'bcryptjs';
+import { hash } from 'bcryptjs';
 
 export const runtime = 'nodejs';
 
@@ -12,17 +12,17 @@ export async function POST(req: NextRequest) {
     
     if (!password) {
       return NextResponse.json(
-        { error: 'ต้องระบุรหัสผ่าน' },
+        { message: 'รหัสผ่านไม่ถูกต้อง' },
         { status: 400 }
       );
     }
     
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const hashedPassword = await hash(password, 10);
     return NextResponse.json({ hashedPassword });
   } catch (error) {
-    console.error('Password hash API error:', error);
+    console.error('Hash password error:', error);
     return NextResponse.json(
-      { error: 'เกิดข้อผิดพลาดในการเข้ารหัสรหัสผ่าน' },
+      { message: 'เกิดข้อผิดพลาดในการเข้ารหัสรหัสผ่าน' },
       { status: 500 }
     );
   }
