@@ -1,7 +1,6 @@
 // ไฟล์นี้ไม่ได้ใช้งานแล้ว แต่สร้างไว้เพื่อแก้ปัญหา build error
 import { NextResponse } from 'next/server';
 
-export const runtime = 'nodejs';
 
 export async function GET() {
   return NextResponse.json(
