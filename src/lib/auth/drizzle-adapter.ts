@@ -27,8 +27,22 @@ export function DrizzleAdapter(): Adapter {
     },
     
     async getUser(id) {
+      // ตรวจสอบว่า id มีค่าหรือไม่
+      if (!id) return null;
+      
+      // พยายามแปลง id เป็นตัวเลข
+      let numericId: number;
+      try {
+        numericId = Number(id);
+        // ตรวจสอบว่าเป็นตัวเลขที่ถูกต้องหรือไม่
+        if (isNaN(numericId) || numericId <= 0) return null;
+      } catch (error) {
+        console.error('Invalid user ID:', id);
+        return null;
+      }
+      
       const dbUser = await db.query.users.findFirst({
-        where: eq(users.id, Number(id)),
+        where: eq(users.id, numericId),
       });
       
       if (!dbUser) return null;
@@ -89,7 +103,19 @@ export function DrizzleAdapter(): Adapter {
     },
     
     async updateUser({ id, ...data }) {
+      // ตรวจสอบว่า id มีค่าหรือไม่
       if (!id) throw new Error("User ID is required");
+      
+      // พยายามแปลง id เป็นตัวเลข
+      let numericId: number;
+      try {
+        numericId = Number(id);
+        // ตรวจสอบว่าเป็นตัวเลขที่ถูกต้องหรือไม่
+        if (isNaN(numericId) || numericId <= 0) throw new Error("Invalid user ID");
+      } catch (error) {
+        console.error('Invalid user ID:', id);
+        throw new Error("Invalid user ID format");
+      }
       
       // กรองข้อมูลที่จะอัปเดต เอาเฉพาะที่อนุญาตให้อัปเดตได้
       const updateData: any = {};
@@ -101,7 +127,7 @@ export function DrizzleAdapter(): Adapter {
       const [dbUser] = await db
         .update(users)
         .set(updateData)
-        .where(eq(users.id, Number(id)))
+        .where(eq(users.id, numericId))
         .returning();
       
       const adaptedUser: AdapterUser = {
@@ -116,9 +142,23 @@ export function DrizzleAdapter(): Adapter {
     },
     
     async deleteUser(userId) {
+      // ตรวจสอบว่า userId มีค่าหรือไม่
+      if (!userId) return null;
+      
+      // พยายามแปลง userId เป็นตัวเลข
+      let numericId: number;
+      try {
+        numericId = Number(userId);
+        // ตรวจสอบว่าเป็นตัวเลขที่ถูกต้องหรือไม่
+        if (isNaN(numericId) || numericId <= 0) return null;
+      } catch (error) {
+        console.error('Invalid user ID:', userId);
+        return null;
+      }
+      
       const [dbUser] = await db
         .delete(users)
-        .where(eq(users.id, Number(userId)))
+        .where(eq(users.id, numericId))
         .returning();
       
       if (!dbUser) return null;
@@ -135,9 +175,21 @@ export function DrizzleAdapter(): Adapter {
     },
     
     async linkAccount(account) {
+      // ตรวจสอบว่า userId มีค่าและถูกต้องหรือไม่
+      if (!account.userId) throw new Error("User ID is required");
+      
+      let numericUserId: number;
+      try {
+        numericUserId = Number(account.userId);
+        if (isNaN(numericUserId) || numericUserId <= 0) throw new Error("Invalid user ID");
+      } catch (error) {
+        console.error('Invalid user ID in linkAccount:', account.userId);
+        throw new Error("Invalid user ID format");
+      }
+      
       // แปลงค่าให้ตรงกับโครงสร้างของตาราง
       const accountData: NewAccount = {
-        userId: Number(account.userId),
+        userId: numericUserId,
         type: account.type,
         provider: account.provider,
         providerAccountId: account.providerAccountId,
@@ -165,9 +217,21 @@ export function DrizzleAdapter(): Adapter {
     },
     
     async createSession(data) {
+      // ตรวจสอบว่า userId มีค่าและถูกต้องหรือไม่
+      if (!data.userId) throw new Error("User ID is required");
+      
+      let numericUserId: number;
+      try {
+        numericUserId = Number(data.userId);
+        if (isNaN(numericUserId) || numericUserId <= 0) throw new Error("Invalid user ID");
+      } catch (error) {
+        console.error('Invalid user ID in createSession:', data.userId);
+        throw new Error("Invalid user ID format");
+      }
+      
       const sessionData = {
         id: crypto.randomUUID(),
-        userId: Number(data.userId),
+        userId: numericUserId,
         sessionToken: data.sessionToken,
         expiresAt: data.expires,
       };
