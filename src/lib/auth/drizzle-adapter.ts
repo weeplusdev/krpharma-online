@@ -1,7 +1,7 @@
 import { and, eq } from 'drizzle-orm';
 import { db } from '@/lib/db';
 import { accounts, sessions, users, verificationTokens, type User, type NewAccount } from '@/lib/db/schema';
-import type { Adapter, AdapterAccount, AdapterSession, AdapterUser, VerificationToken } from 'next-auth/adapters';
+import type { Adapter, AdapterSession, AdapterUser, VerificationToken } from 'next-auth/adapters';
 
 export function DrizzleAdapter(): Adapter {
   return {
