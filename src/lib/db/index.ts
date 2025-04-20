@@ -1,5 +1,5 @@
 import { drizzle } from "drizzle-orm/neon-http";
-import { neon, neonConfig } from "@neondatabase/serverless";
+import { neon } from "@neondatabase/serverless";
 import { config } from "dotenv";
 
 // โหลด .env file
@@ -15,8 +15,13 @@ if (!databaseUrl) {
   throw new Error("DATABASE_URL is missing. Please check your .env file.");
 }
 
-// สร้างการเชื่อมต่อ SQL
-const sql = neon(databaseUrl);
+// สร้างการเชื่อมต่อ SQL ด้วยตัวเลือกที่กำหนดเอง
+const sql = neon(databaseUrl, { 
+  fetchOptions: { 
+    // เพิ่มเวลาหมดเวลาเป็น 60 วินาที
+    timeout: 60000 
+  }
+});
 
 // สร้าง Drizzle client และส่งออก
 export const db = drizzle(sql);

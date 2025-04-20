@@ -4,7 +4,6 @@ import {
     text,
     varchar,
     timestamp,
-    boolean,
     uniqueIndex,
     integer,
     pgEnum,
@@ -12,6 +11,7 @@ import {
     primaryKey,
   } from 'drizzle-orm/pg-core';
   import { InferSelectModel, InferInsertModel, sql } from 'drizzle-orm';
+  import { drizzle } from 'drizzle-orm/neon-http';
   
   // สร้าง Enum สำหรับบทบาทผู้ใช้
   export const userRoleEnum = pgEnum('user_role', [
@@ -125,7 +125,7 @@ import {
   export type NewRolePermission = InferInsertModel<typeof rolePermissions>;
   
   // ฟังก์ชันสำหรับสร้างข้อมูลพื้นฐานของสิทธิ์
-  export async function seedPermissions(db: any) {
+  export async function seedPermissions(db: ReturnType<typeof drizzle>) {
     // สร้างสิทธิ์พื้นฐาน
     const basicPermissions = [
       { name: 'canManageUsers', description: 'สามารถจัดการผู้ใช้งานได้' },
@@ -177,7 +177,7 @@ import {
   
       for (const perm of permIds) {
         await db.insert(rolePermissions).values({
-          role: rolePerm.role,
+          role: rolePerm.role as "admin" | "pharmacist" | "medic" | "stock" | "seller" | "customer" | "user" | "doctor",
           permissionId: perm.id,
         }).onConflictDoNothing();
       }
