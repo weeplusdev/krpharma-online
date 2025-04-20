@@ -36,7 +36,7 @@ export function DrizzleAdapter(): Adapter {
         numericId = Number(id);
         // ตรวจสอบว่าเป็นตัวเลขที่ถูกต้องหรือไม่
         if (isNaN(numericId) || numericId <= 0) return null;
-      } catch (error) {
+      } catch (_) {
         console.error('Invalid user ID:', id);
         return null;
       }
@@ -112,13 +112,13 @@ export function DrizzleAdapter(): Adapter {
         numericId = Number(id);
         // ตรวจสอบว่าเป็นตัวเลขที่ถูกต้องหรือไม่
         if (isNaN(numericId) || numericId <= 0) throw new Error("Invalid user ID");
-      } catch (error) {
+      } catch (_) {
         console.error('Invalid user ID:', id);
         throw new Error("Invalid user ID format");
       }
       
       // กรองข้อมูลที่จะอัปเดต เอาเฉพาะที่อนุญาตให้อัปเดตได้
-      const updateData: any = {};
+      const updateData: Record<string, unknown> = {};
       if (data.name !== undefined) updateData.name = data.name;
       if (data.email !== undefined) updateData.email = data.email;
       if (data.emailVerified !== undefined) updateData.emailVerified = data.emailVerified;
@@ -151,7 +151,7 @@ export function DrizzleAdapter(): Adapter {
         numericId = Number(userId);
         // ตรวจสอบว่าเป็นตัวเลขที่ถูกต้องหรือไม่
         if (isNaN(numericId) || numericId <= 0) return null;
-      } catch (error) {
+      } catch (_) {
         console.error('Invalid user ID:', userId);
         return null;
       }
@@ -182,7 +182,7 @@ export function DrizzleAdapter(): Adapter {
       try {
         numericUserId = Number(account.userId);
         if (isNaN(numericUserId) || numericUserId <= 0) throw new Error("Invalid user ID");
-      } catch (error) {
+      } catch (_) {
         console.error('Invalid user ID in linkAccount:', account.userId);
         throw new Error("Invalid user ID format");
       }
@@ -224,7 +224,7 @@ export function DrizzleAdapter(): Adapter {
       try {
         numericUserId = Number(data.userId);
         if (isNaN(numericUserId) || numericUserId <= 0) throw new Error("Invalid user ID");
-      } catch (error) {
+      } catch (_) {
         console.error('Invalid user ID in createSession:', data.userId);
         throw new Error("Invalid user ID format");
       }
