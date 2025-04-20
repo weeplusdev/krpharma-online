@@ -1,75 +1,90 @@
-import { db } from './index';
-import { users, NewUser, User } from './schema';
+import { users, accounts, type UserRole } from '@/lib/db/schema';
+import { db } from '@/lib/db';
 import { eq } from 'drizzle-orm';
-import { hash, compare } from 'bcryptjs';
+import { hashPassword, verifyPassword } from '@/lib/auth/password';
+
+// ส่งออกฟังก์ชัน verifyPassword เพื่อให้ไฟล์อื่นสามารถใช้งานได้
+export { verifyPassword };
+
+/**
+ * ค้นหาผู้ใช้จาก Line ID
+ */
+export async function getUserByLineId(lineId: string) {
+  const result = await db.query.users.findFirst({
+    where: eq(users.lineId, lineId)
+  });
+  
+  return result;
+}
 
 /**
  * ค้นหาผู้ใช้จากอีเมล
  */
-export async function getUserByEmail(email: string): Promise<User | undefined> {
-  const result = await db
-    .select()
-    .from(users)
-    .where(eq(users.email, email))
-    .limit(1);
+export async function getUserByEmail(email: string) {
+  const result = await db.query.users.findFirst({
+    where: eq(users.email, email)
+  });
   
-  return result[0];
+  return result;
 }
 
 /**
- * ค้นหาผู้ใช้จากไอดี
+ * สร้างผู้ใช้ใหม่จากข้อมูล Line
  */
-export async function getUserById(id: number): Promise<User | undefined> {
-  const result = await db
-    .select()
-    .from(users)
-    .where(eq(users.id, id))
-    .limit(1);
+export async function createUserFromLine(userData: {
+  name: string;
+  email: string;
+  lineId: string;
+  image?: string;
+  role: UserRole;
+}) {
+  // สร้างรหัสผ่านสุ่มสำหรับผู้ใช้ใหม่ (อาจไม่จำเป็นถ้าใช้ Line Login อย่างเดียว)
+  const randomPassword = Math.random().toString(36).slice(-8);
+  const hashedPassword = await hashPassword(randomPassword);
   
-  return result[0];
-}
-
-/**
- * สร้างผู้ใช้ใหม่
- */
-export async function createUser(userData: Omit<NewUser, 'id' | 'createdAt' | 'updatedAt'>): Promise<User> {
-  // เข้ารหัสรหัสผ่าน
-  const hashedPassword = await hash(userData.password, 10);
-  
-  const newUser = {
-    ...userData,
+  // สร้างผู้ใช้ใหม่
+  const [newUser] = await db.insert(users).values({
+    name: userData.name,
+    email: userData.email,
     password: hashedPassword,
-  };
+    lineId: userData.lineId,
+    image: userData.image,
+    role: userData.role as UserRole,
+  }).returning();
   
-  const result = await db.insert(users).values(newUser).returning();
+  // สร้างบัญชี Line ในตาราง accounts
+  await db.insert(accounts).values({
+    userId: newUser.id,
+    type: 'oauth',
+    provider: 'line',
+    providerAccountId: userData.lineId,
+    // ไม่จำเป็นต้องเก็บ tokens ทั้งหมดเนื่องจาก NextAuth จะจัดการให้
+  });
   
-  return result[0];
+  return newUser;
 }
 
 /**
- * ตรวจสอบรหัสผ่าน
+ * เชื่อมโยงบัญชี Line กับบัญชีที่มีอยู่แล้ว
  */
-export async function verifyPassword(hashedPassword: string, password: string): Promise<boolean> {
-  return compare(password, hashedPassword);
-}
-
-/**
- * อัปเดตข้อมูลผู้ใช้
- */
-export async function updateUser(id: number, userData: Partial<NewUser>): Promise<User | undefined> {
-  // ถ้ามีการอัปเดตรหัสผ่าน ให้เข้ารหัสก่อน
-  if (userData.password) {
-    userData.password = await hash(userData.password, 10);
-  }
-  
-  const result = await db
+export async function linkLineToExistingUser(userId: number, lineId: string, lineProfile: { picture?: string }) {
+  // อัปเดตข้อมูลผู้ใช้
+  const [updatedUser] = await db
     .update(users)
     .set({
-      ...userData,
-      updatedAt: new Date(),
+      lineId: lineId,
+      image: lineProfile.picture || undefined,
     })
-    .where(eq(users.id, id))
+    .where(eq(users.id, userId))
     .returning();
   
-  return result[0];
-} 
+  // สร้างบัญชี Line ในตาราง accounts
+  await db.insert(accounts).values({
+    userId: userId,
+    type: 'oauth',
+    provider: 'line',
+    providerAccountId: lineId,
+  });
+  
+  return updatedUser;
+}
