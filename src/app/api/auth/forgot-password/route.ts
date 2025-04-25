@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { users } from '@/lib/db/schema';
+//import { users } from '@/lib/db/schema';
 import crypto from 'crypto';
 
 // ในสภาพแวดล้อมจริง ควรเพิ่มการส่งอีเมลจริงๆ

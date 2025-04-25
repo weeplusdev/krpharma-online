@@ -26,15 +26,14 @@ export interface SanityImage {
     current: string;
   }
   
-  export interface SanityProduct {
+  export type SanityProduct = {
     _id: string;
-    _type: 'product';
     title: string;
-    slug: SanitySlug;
-    mainImage?: SanityImage;
-    body?: any[]; // PortableText content
+    slug: { current: string };
+    mainImage: { asset: { _ref: string } };
     externalId?: string;
-  }
+    body?: any; // สำหรับ block content
+  };
   
   export interface SanityCategory {
     _id: string;

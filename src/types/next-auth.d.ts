@@ -1,32 +1,37 @@
-import { UserRole } from "@/lib/db/schema";
+import type { DefaultSession } from "next-auth"
+import { Session } from "next-auth"
 
 declare module "next-auth" {
   /**
-   * ขยาย User interface ให้มี role และ permissions
+   * เพิ่ม property ให้กับ User ใน session
    */
-  interface User {
-    role?: UserRole;
-    permissions?: string[];
-  }
-
   interface Session {
-    user?: {
-      id?: string | null;
+    provider?: string;
+    accessToken?: string;
+    user: {
+      id: string;
+      role: string;
       name?: string | null;
       email?: string | null;
       image?: string | null;
-      role?: UserRole;
-      permissions?: string[];
-    };
+    } & DefaultSession["user"]
+  }
+
+  interface User {
+    id: string
+    role: string
+    name?: string | null
+    email?: string | null
   }
 }
 
 declare module "next-auth/jwt" {
-  /**
-   * ขยาย JWT interface ให้มี role และ permissions
+  /** 
+   * เพิ่ม property ให้กับ JWT token ใน next-auth 
    */
   interface JWT {
-    role?: UserRole;
-    permissions?: string[];
+    id: string
+    role: string
   }
 }
+

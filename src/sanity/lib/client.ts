@@ -1,18 +1,10 @@
-import { createClient } from 'next-sanity';
-import imageUrlBuilder from '@sanity/image-url';
-import { SanityImage } from '@/types/sanity';
+import { createClient } from 'next-sanity'
 
-export const sanityConfig = {
-  projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID || '',
-  dataset: process.env.NEXT_PUBLIC_SANITY_DATASET || 'production',
-  apiVersion: '2023-05-03',
-  useCdn: process.env.NODE_ENV === 'production'
-};
+import { apiVersion, dataset, projectId } from '../env'
 
-export const sanityClient = createClient(sanityConfig);
-
-const builder = imageUrlBuilder(sanityConfig);
-
-export function urlForImage(source: SanityImage): string {
-  return builder.image(source).auto('format').fit('max').url();
-}
+export const client = createClient({
+  projectId,
+  dataset,
+  apiVersion,
+  useCdn: true, // Set to false if statically generating pages, using ISR or tag-based revalidation
+})

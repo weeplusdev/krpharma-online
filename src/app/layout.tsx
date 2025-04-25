@@ -1,28 +1,27 @@
-import type { Metadata } from "next";
-import { Inter } from "next/font/google";
-import "./globals.css";
-import NavBar from "@/components/NavBar";
-import { Toaster } from 'sonner';
+import type React from "react"
+import type { Metadata } from "next"
+import { Inter } from "next/font/google"
+import "./globals.css"
+import { Providers } from "./providers"
 
-const inter = Inter({ subsets: ["latin"] });
+const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
   title: "KR Pharma - ร้านขายยาออนไลน์",
-  description: "ร้านขายยาออนไลน์ที่มีทั้งยาและผลิตภัณฑ์เพื่อสุขภาพครบวงจร",
-};
+  description: "ร้านขายยาออนไลน์ที่ให้บริการด้านสุขภาพ พร้อมจัดส่งถึงที่",
+  generator: 'weeplus.dev'
+}
 
 export default function RootLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode;
+  children: React.ReactNode
 }>) {
   return (
-    <html lang="th">
+    <html lang="th" suppressHydrationWarning>
       <body className={inter.className}>
-        <NavBar />
-        {children}
-        <Toaster position="top-right" richColors />
+        <Providers>{children}</Providers>
       </body>
     </html>
-  );
+  )
 }
